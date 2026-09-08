@@ -1,0 +1,49 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>LifeGuard AI</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#0a1c2d;color:#fff;margin:0;padding:35px}
+    .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .card{background:#162735;border:1px solid #274556;border-radius:14px;padding:20px}
+    .value{font-size:32px;font-weight:700;margin-top:8px}
+    button{padding:12px 18px;border:0;border-radius:10px;cursor:pointer}
+    #status{margin-top:20px;padding:16px;border-radius:12px;background:#162735}
+  </style>
+</head>
+<body>
+  <h1>LifeGuard AI</h1>
+  <p>Personalized predictive emergency detection</p>
+  <div class="grid">
+    <div class="card">Risk<div id="risk" class="value">—</div></div>
+    <div class="card">Heart rate<div id="hr" class="value">—</div></div>
+    <div class="card">SpO₂<div id="spo2" class="value">—</div></div>
+    <div class="card">Temperature<div id="temp" class="value">—</div></div>
+  </div>
+  <br>
+  <button onclick="normal()">Normal reading</button>
+  <button onclick="alertReading()">Simulate deterioration</button>
+  <div id="status">Waiting for sensor data...</div>
+
+<script>
+async function send(v){
+  const r = await fetch('/predict', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(v)
+  });
+  const d = await r.json();
+  document.getElementById('risk').textContent = d.risk_score + ' / ' + d.risk_level;
+  document.getElementById('hr').textContent = Math.round(v.heart_rate)+' bpm';
+  document.getElementById('spo2').textContent = v.spo2.toFixed(1)+'%';
+  document.getElementById('temp').textContent = v.temperature.toFixed(1)+' °F';
+  document.getElementById('status').textContent =
+    d.alert ? '🚨 Caregiver alert triggered: '+d.reasons.join(', ') :
+              '✓ '+d.reasons.join(', ');
+}
+function normal(){send({heart_rate:73,spo2:98,temperature:98.4,motion:.2})}
+function alertReading(){send({heart_rate:112,spo2:94.2,temperature:99.3,motion:1.5})}
+</script>
+</body>
+</html>
